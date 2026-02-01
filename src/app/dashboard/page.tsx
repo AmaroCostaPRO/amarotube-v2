@@ -5,14 +5,17 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useGamification } from '@/context/GamificationContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Palette, ShoppingBag, BellRing, User, Lock } from 'lucide-react';
+import { Palette, ShoppingBag, BellRing, User, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// Componentes
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MessagesTab } from '@/components/dashboard/MessagesTab';
 import { ProfileTab } from '@/components/dashboard/ProfileTab';
+import { CustomizeTab } from '@/components/dashboard/CustomizeTab';
+import { StoreTab } from '@/components/dashboard/StoreTab';
+
+import { StoreReward } from '@/types';
 
 interface AdminMessage {
   id: string;
@@ -24,8 +27,16 @@ interface AdminMessage {
 
 export default function DashboardPage() {
   const { session, user, profile, signOut, refreshProfile } = useAuth();
-  const { avatarBorder } = useTheme();
-  const { stats, isLoading: isLoadingStats } = useGamification();
+  const {
+    wallpaper, setWallpaper, addCustomWallpaper, removeCustomWallpaper,
+    showCursor, setShowCursor, pointerColor, setPointerColor,
+    avatarBorder, setAvatarBorder
+  } = useTheme(); // [MODIFIED]
+  const { stats, unlockItem, isLoading: isLoadingStats } = useGamification();
+
+  const [isUploading, setIsUploading] = useState(false); // [NEW]
+  const [storeRewards, setStoreRewards] = useState<StoreReward[]>([]); // [NEW]
+  const [isLoadingStore, setIsLoadingStore] = useState(true); // [NEW]
 
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [newUsername, setNewUsername] = useState('');
@@ -33,6 +44,27 @@ export default function DashboardPage() {
   const [adminMessages, setAdminMessages] = useState<AdminMessage[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeTab, setActiveTab] = useState('customize');
+
+  const fetchStoreItems = useCallback(async () => {
+    setIsLoadingStore(true);
+    try {
+      const { data, error } = await supabase.from('store_items').select('*').order('cost', { ascending: true });
+      if (error) throw error;
+
+      const formatted = (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        cost: item.cost,
+        type: item.type,
+        value: item.metadata?.value
+      }));
+      setStoreRewards(formatted);
+    } catch (err) {
+      console.error('Erro ao buscar itens da loja:', err);
+    } finally {
+      setIsLoadingStore(false);
+    }
+  }, []);
 
   const fetchAdminMessages = useCallback(async () => {
     if (!user?.id) return;
@@ -46,7 +78,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (profile?.username) setNewUsername(profile.username);
     if (user?.id) fetchAdminMessages();
-  }, [profile, user, fetchAdminMessages]);
+    fetchStoreItems();
+  }, [profile, user, fetchAdminMessages, fetchStoreItems]);
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || event.target.files.length === 0 || !user) return;
@@ -111,6 +144,50 @@ export default function DashboardPage() {
     }
   };
 
+  const handleWallpaperUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0 || !user) return;
+    setIsUploading(true);
+    const file = event.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${user.id}/wp_${Date.now()}.${fileExt}`;
+    try {
+      const { error: uploadError } = await supabase.storage.from('wallpapers').upload(filePath, file);
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('wallpapers').getPublicUrl(filePath);
+      addCustomWallpaper(publicUrl);
+      toast.success('Papel de parede enviado!');
+    } catch {
+      toast.error('Erro no upload.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleUnlock = async (reward: StoreReward) => {
+    const success = await unlockItem(reward.id, reward.cost);
+    if (success) {
+      if (reward.type === 'cursor') setPointerColor(reward.value);
+      if (reward.type === 'border') setAvatarBorder(reward.value);
+      if (reward.type === 'wallpaper') setWallpaper(reward.value);
+      if (reward.type === 'name_color') {
+        await supabase.from('profiles').update({ name_color: reward.value }).eq('id', user?.id);
+        await refreshProfile();
+        toast.success('Cor equipada com sucesso!');
+      }
+    }
+  };
+
+  const handleUseReward = async (reward: StoreReward) => {
+    if (reward.type === 'cursor') setPointerColor(reward.value);
+    if (reward.type === 'border') setAvatarBorder(reward.value);
+    if (reward.type === 'wallpaper') setWallpaper(reward.value);
+    if (reward.type === 'name_color') {
+      await supabase.from('profiles').update({ name_color: reward.value }).eq('id', user?.id);
+      await refreshProfile();
+      toast.success('Cor equipada!');
+    }
+  };
+
   const triggerClasses = "rounded-xl gap-2 font-bold transition-none h-full data-[state=active]:bg-black/[0.04] dark:data-[state=active]:bg-white/10 data-[state=active]:shadow-inner data-[state=active]:text-primary relative disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed";
 
   return (
@@ -136,47 +213,34 @@ export default function DashboardPage() {
         </TabsList>
         
         <TabsContent value="customize" className="transition-none">
-          <div className="glass-panel rounded-xl sm:rounded-[2.5rem] p-8 shadow-xl">
-            <div className="flex items-center gap-3 mb-6">
-              <Palette className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-black">Personalização Visual</h2>
-            </div>
-            <p className="text-muted-foreground mb-8">
-              Escolha fundos, cores de cursor e bordas para personalizar sua experiência.
-            </p>
-            {!session ? (
-              <div className="text-center py-16 opacity-50">
-                <Lock className="h-16 w-16 mx-auto mb-4" />
-                <p className="text-xl font-black">Faça login para acessar</p>
-                <p className="text-sm">Personalize seu perfil após autenticar-se.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <div className="aspect-video rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border-2 border-primary flex items-center justify-center">
-                  <span className="text-xs font-bold opacity-60">Tema Atual</span>
-                </div>
-                <div className="aspect-video rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-white/10 opacity-60 hover:opacity-100 cursor-pointer transition-all" />
-                <div className="aspect-video rounded-2xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-white/10 opacity-60 hover:opacity-100 cursor-pointer transition-all" />
-              </div>
-            )}
-          </div>
+          {isLoadingStore ? (
+            <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary opacity-50" /></div>
+          ) : (
+            <CustomizeTab
+              wallpaper={wallpaper}
+              setWallpaper={setWallpaper}
+              // addCustomWallpaper={addCustomWallpaper}
+              removeCustomWallpaper={removeCustomWallpaper}
+              showCursor={showCursor}
+              setShowCursor={setShowCursor}
+              pointerColor={pointerColor}
+              setPointerColor={setPointerColor}
+              avatarBorder={avatarBorder}
+              setAvatarBorder={setAvatarBorder}
+              stats={stats}
+              isUploading={isUploading}
+              handleFileUpload={handleWallpaperUpload}
+              rewards={storeRewards}
+            />
+          )}
         </TabsContent>
         
         <TabsContent value="store" className="transition-none">
-          <div className="glass-panel rounded-xl sm:rounded-[2.5rem] p-8 shadow-xl">
-            <div className="flex items-center gap-3 mb-6">
-              <ShoppingBag className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-black">Loja de Itens</h2>
-            </div>
-            <p className="text-muted-foreground mb-8">
-              Use seus créditos para desbloquear itens exclusivos.
-            </p>
-            <div className="text-center py-16 opacity-50">
-              <ShoppingBag className="h-16 w-16 mx-auto mb-4" />
-              <p className="text-xl font-black">Em breve</p>
-              <p className="text-sm">Novos itens serão adicionados em atualizações futuras.</p>
-            </div>
-          </div>
+          {isLoadingStore ? (
+            <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary opacity-50" /></div>
+          ) : (
+            <StoreTab stats={stats} rewards={storeRewards} onUnlock={handleUnlock} onUse={handleUseReward} />
+          )}
         </TabsContent>
         
         <TabsContent value="messages" className="transition-none">

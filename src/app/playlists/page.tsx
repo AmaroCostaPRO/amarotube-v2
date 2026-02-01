@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { PlaylistGridCard } from '@/components/playlists/PlaylistGridCard';
 
 interface Playlist {
   id: string;
@@ -65,19 +66,15 @@ export default function PlaylistsPage() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
         {playlists.map(playlist => (
-          <Link
+          <PlaylistGridCard
             key={playlist.id}
-            href={`/playlists/${playlist.id}`}
-            className="glass-panel rounded-2xl p-4 hover:scale-[1.02] transition-transform"
-          >
-            <div className="aspect-video bg-muted rounded-xl mb-3 flex items-center justify-center">
-              <ListMusic className="h-12 w-12 text-muted-foreground" />
-            </div>
-            <h3 className="font-bold line-clamp-1">{playlist.title}</h3>
-            <p className="text-xs text-muted-foreground">
-              {playlist.profiles?.username || 'usuário'} • {playlist.video_count || 0} vídeos
-            </p>
-          </Link>
+            id={playlist.id}
+            title={playlist.title}
+            videoCount={playlist.video_count || 0}
+            coverImages={playlist.thumbnail_urls || []}
+            isPrivate={!playlist.is_public}
+            ownerName={playlist.username || playlist.profiles?.username || 'usuário'}
+          />
         ))}
       </div>
     );

@@ -14,6 +14,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { FriendsTab } from '@/components/profile/FriendsTab';
+import { MessagesTab } from '@/components/profile/MessagesTab';
+import { CalendarTab } from '@/components/profile/CalendarTab';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -162,20 +164,12 @@ export default function ProfilePage() {
 
         {isOwnProfile && (
           <TabsContent value="messages" className="transition-none">
-            <div className="glass-panel rounded-xl sm:rounded-[2.5rem] p-8 shadow-xl text-center py-20">
-              <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-30" />
-              <p className="text-xl font-black opacity-50">Sistema de Mensagens</p>
-              <p className="text-sm opacity-40">Funcionalidade completa disponível em breve.</p>
-            </div>
+            <MessagesTab />
           </TabsContent>
         )}
 
         <TabsContent value="calendar" className="transition-none">
-          <div className="glass-panel rounded-xl sm:rounded-[2.5rem] p-8 shadow-xl text-center py-20">
-            <CalendarIcon className="h-16 w-16 mx-auto mb-4 opacity-30" />
-            <p className="text-xl font-black opacity-50">Agenda Pessoal</p>
-            <p className="text-sm opacity-40">Funcionalidade completa disponível em breve.</p>
-          </div>
+          <CalendarTab targetUserId={profile.id} isOwnProfile={isOwnProfile} />
         </TabsContent>
       </Tabs>
     </div>
