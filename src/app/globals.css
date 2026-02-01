@@ -1,26 +1,276 @@
 @import "tailwindcss";
+@source not "../../.agent";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Reset e Compatibilidade Global */
+:root,
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Patch para a biblioteca Sonner (Toast) */
+/* Isso corrige o aviso 'user-select is not supported by Safari' */
+[data-sonner-toast][data-swiped=true] {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 25% 25%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
+    --radius: 1.5rem;
+
+    /* Neo-Glassmorphism 2.0 Light (Alta legibilidade + bordas sutis) */
+    --surface-glass: rgba(255, 255, 255, 0.85);
+    --surface-glass-matte: rgba(255, 255, 255, 0.95);
+    --surface-border: rgba(0, 0, 0, 0.06);
+    --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.08);
+
+    --bg-text-color: #0f172a;
+    --font-outfit: "Outfit", sans-serif;
+  }
+
+  .dark {
+    --background: 222 47% 4%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 6%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 6%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 222 47% 12%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 47% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 222 47% 12%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 222 47% 15%;
+    --input: 222 47% 15%;
+    --ring: 217 91% 60%;
+
+    /* Neo-Glassmorphism 2.0 Dark (Alta legibilidade + bordas sutis) */
+    --surface-glass: rgba(10, 15, 28, 0.88);
+    --surface-glass-matte: rgba(10, 15, 28, 0.95);
+    --surface-border: rgba(255, 255, 255, 0.08);
+    --shadow-soft: 0 12px 48px rgba(0, 0, 0, 0.4);
+
+    --bg-text-color: #ffffff;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .text-contrast-bg {
+    color: var(--bg-text-color) !important;
+    transition: none !important;
+  }
+
+  /* Super Isolamento Visual para Sidebar e Diálogos */
+  .isolate-gpu {
+    isolation: isolate;
+    transform: translate3d(0, 0, 0);
+    /* Força camada de composição 3D real */
+    will-change: transform, width, contents;
+    contain: paint layout;
+    /* Impede vazamento de pixels fora do container */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    min-height: 100vh;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+    font-family: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Acessibilidade: Desabilita animações para usuários que preferem menos movimento */
+  @media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.15);
+  border-radius: 20px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.4);
+  background-clip: content-box;
+}
+
+.glass-panel {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-style: solid;
+  border-width: 1px;
+  background: var(--surface-glass);
+  border-color: var(--surface-border);
+  box-shadow: var(--shadow-soft);
+
+  /* GPU-optimized */
+  will-change: backdrop-filter;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.glass-panel-matte {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-style: solid;
+  border-width: 1px;
+  background: var(--surface-glass-matte);
+  border-color: var(--surface-border);
+  box-shadow: var(--shadow-soft);
+
+  /* GPU-optimized */
+  will-change: backdrop-filter;
+}
+
+.neo-button {
+  transition: all 0.2s ease;
+  border: none;
+  box-shadow: var(--shadow-soft);
+}
+
+.neo-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(var(--primary), 0.2);
+}
+
+.neo-button:active {
+  transform: scale(0.95);
+}
+
+/* ============================================
+   SMART CONTAINER SYSTEM (Fluid Edge Container)
+   Resolve problemas de layout em 16:9 e ultrawide
+   ============================================ */
+
+/* Container padrão - para a maioria das páginas */
+.smart-container {
+  width: 100%;
+  max-width: clamp(1024px, 85vw, 1920px);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 3vw, 4rem);
+}
+
+/* Container expandido - para grids de cards/vídeos */
+.smart-container--wide {
+  width: 100%;
+  max-width: clamp(1280px, 92vw, 2400px);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 2vw, 3rem);
+}
+
+/* Container para leitura - limita largura do texto */
+.smart-container--prose {
+  max-width: 75ch;
+  margin-inline: auto;
+}
+
+/* Container full - ocupa toda a largura disponível */
+.smart-container--full {
+  width: 100%;
+  max-width: 100%;
+  padding-inline: clamp(1rem, 3vw, 4rem);
+}
+
+/* Mobile: containers são full-width */
+@media (max-width: 1024px) {
+
+  .smart-container,
+  .smart-container--wide {
+    max-width: 100%;
+    padding-inline: 0;
+  }
+}
+
+/* ============================================
+   SUPORTE A TELAS 4K E ULTRAWIDE
+   Expande containers progressivamente em resoluções altas
+   sem impactar telas comuns (1080p, 1440p)
+   ============================================ */
+
+/* 2K/Ultrawide (2560px+) */
+@media (min-width: 2560px) {
+  .smart-container {
+    max-width: clamp(1024px, 75vw, 2200px);
+  }
+
+  .smart-container--wide {
+    max-width: clamp(1280px, 85vw, 2800px);
+  }
+}
+
+/* 4K (3840px+) */
+@media (min-width: 3840px) {
+  .smart-container {
+    max-width: clamp(1280px, 65vw, 2560px);
+  }
+
+  .smart-container--wide {
+    max-width: clamp(1440px, 75vw, 3200px);
+  }
+
+  .smart-container--full {
+    padding-inline: clamp(2rem, 5vw, 8rem);
+  }
 }

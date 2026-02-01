@@ -1,65 +1,174 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from 'react';
+import { Loader2, Search } from 'lucide-react';
+import { VideoCard } from '@/components/features/video/VideoCard';
+import { ActivityCard } from '@/components/features/social/ActivityCard';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AddVideoSection } from '@/components/features/video/AddVideoSection';
+import { SocialSidebar } from '@/components/SocialSidebar';
+import { VideoCardSkeleton } from '@/components/ui/skeleton-grid';
+import { useFeed } from '@/hooks/useFeed';
+import { SORT_MODES } from '@/constants';
+import { FeedVideo } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Home() {
+  const { user } = useAuth();
+  const [filterMode, setFilterMode] = useState<string>(SORT_MODES.RECENT);
+  const [searchInput, setSearchInput] = useState('');
+
+  const {
+    data,
+    error,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useFeed();
+
+  // Create a flattened list of items from the pages
+  const feedItems = data?.pages.flat() || [];
+
+  // Ref for infinite scroll
+  const lastElementRef = (node: HTMLDivElement | null) => {
+    if (isLoading || isFetchingNextPage) return;
+    if (node) {
+      const observer = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting && hasNextPage) {
+          fetchNextPage();
+        }
+      });
+      observer.observe(node);
+    }
+  };
+
+  // Mock functions for compatibility since the simpler hook doesn't export them
+  const updateVideoItem = (_id: string, _updates: Partial<FeedVideo>) => {}; 
+  const removeVideoItem = (_id: string) => {}; 
+
+  const handleDataUpdate = (videoId: string, updates: Partial<FeedVideo>) => {
+    updateVideoItem(videoId, updates);
+  };
+
+  const handleVideoDeleted = (videoId: string) => {
+    removeVideoItem(videoId);
+  };
+
+  const selectorClasses = "bg-black/5 dark:bg-black/20 border-none shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20";
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="smart-container--wide mx-auto max-w-[1800px]">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-8">
+        <div className="min-w-0"> {/* Main Feed Column */}
+          <div className="relative z-20 mb-8">
+            <div className="flex justify-center">
+              <div className="w-full lg:max-w-xl" data-add-video>
+                <AddVideoSection />
+              </div>
+            </div>
+          </div>
+
+          <div className="relative z-10">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-between items-center mb-6">
+              {/* Bloco de Título e Filtro */}
+              <div className="flex items-center justify-between gap-4 p-4 glass-panel rounded-xl sm:rounded-[1.5rem] w-full sm:w-auto min-w-[320px] shadow-xl">
+                <h2 className="text-xl font-black whitespace-nowrap tracking-tight pl-2">Feed Principal</h2>
+                <Select value={filterMode} onValueChange={(value: string) => setFilterMode(value)}>
+                  <SelectTrigger
+                    className={`w-[140px] ${selectorClasses} text-sm h-10 rounded-xl`}
+                    aria-label="Filtrar vídeos por"
+                  >
+                    <SelectValue placeholder="Ordem" />
+                  </SelectTrigger>
+                  <SelectContent className="glass-panel rounded-2xl border-white/20">
+                    <SelectItem value={SORT_MODES.RECENT} className="text-xs">Recentes</SelectItem>
+                    <SelectItem value={SORT_MODES.POPULAR} className="text-xs">Tendências</SelectItem>
+                    <SelectItem value={SORT_MODES.TOP} className="text-xs">Karma</SelectItem>
+                    {user && <SelectItem value="my-videos" className="text-xs">Meus</SelectItem>}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Busca do Feed */}
+              <div className="p-4 glass-panel rounded-xl sm:rounded-[1.5rem] w-full sm:w-auto min-w-[320px] shadow-xl">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 flex items-center h-10 bg-black/5 dark:bg-black/20 rounded-xl shadow-inner px-3 border border-white/5">
+                    <input
+                      id="feed-search-input"
+                      name="feed-search"
+                      type="text"
+                      placeholder="Buscar vídeos..."
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      className="flex-1 bg-transparent border-none outline-none text-sm font-normal text-foreground placeholder:text-muted-foreground h-full"
+                      aria-label="Pesquisar no feed"
+                    />
+                  </div>
+                  <Search className="h-5 w-5 text-muted-foreground opacity-30 flex-shrink-0 mr-1" />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              {isLoading ? (
+                <VideoCardSkeleton />
+              ) : error ? (
+                <div className="text-center py-10">
+                  <p className="text-destructive mb-2">Erro ao carregar o feed</p>
+                  <p className="text-muted-foreground text-sm">{error.message}</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+                    {feedItems?.map((item, index) => {
+                      const isLastElement = feedItems.length === index + 1;
+                      const ref = isLastElement ? lastElementRef : null;
+
+                      if (item.item_type === 'video') {
+                        return (
+                          <div ref={ref} key={`video-${item.id}-${index}`}>
+                            <VideoCard
+                              video={item}
+                              onDataUpdate={(updates) => handleDataUpdate(item.id, updates)}
+                              onVideoDeleted={() => handleVideoDeleted(item.id)}
+                            />
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div ref={ref} key={`activity-${item.id}-${index}`}>
+                          <ActivityCard activity={item} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {isFetchingNextPage && (
+                    <div className="flex justify-center items-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  )}
+                  {!hasNextPage && feedItems && feedItems.length > 0 && (
+                    <p className="text-center text-muted-foreground py-8">Você chegou ao fim!</p>
+                  )}
+                  {(!feedItems || feedItems.length === 0) && (
+                    <div className="text-center py-20 text-muted-foreground">
+                      Nenhum vídeo encontrado.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        
+        {/* Social Sidebar Column */}
+        <div className="hidden xl:block">
+          <SocialSidebar />
         </div>
-      </main>
+      </div>
     </div>
   );
 }
