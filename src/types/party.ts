@@ -18,3 +18,15 @@ export interface PartyMember {
     avatar_url: string;
   };
 }
+
+export interface PartyMessage {
+  id: string;
+  content: string;
+  created_at: string;
+  user_id: string;
+  profiles: {
+    username: string;
+    avatar_url: string;
+    name_color?: string;
+  };
+}
