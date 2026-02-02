@@ -210,7 +210,7 @@ export function ChannelInfoDialog({ video, children }: ChannelInfoDialogProps) {
                 existingChannelId ? (
                   <Button 
                     className="w-full h-12 rounded-2xl font-black gap-2 neo-button bg-primary text-white"
-                    onClick={() => { setIsOpen(false);    router.push(`/channel/${video.channel_id}`); }}
+                    onClick={() => { setIsOpen(false);    router.push(`/channels/${video.channel_id}`); }}
                   >
                     <ExternalLink size={18} /> Acessar Página
                   </Button>

@@ -7,15 +7,23 @@ import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PlaylistGridCard } from '@/components/playlists/PlaylistGridCard';
+import { CreatePlaylistModal, ImportYouTubeModal } from '@/components/modals';
+
+interface PlaylistVideo {
+  id: number;
+  videos: {
+    id: string;
+    thumbnail_url: string | null;
+  } | null;
+}
 
 interface Playlist {
   id: string;
   title: string;
   is_public: boolean;
-  video_count?: number;
-  thumbnail_urls?: string[];
   username?: string;
   profiles?: { username: string };
+  playlist_videos?: PlaylistVideo[];
 }
 
 export default function PlaylistsPage() {
@@ -26,7 +34,7 @@ export default function PlaylistsPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from('playlists')
-        .select('*, profiles(username)')
+        .select('*, profiles(username), playlist_videos(id, videos(id, thumbnail_url))')
         .eq('user_id', user!.id)
         .order('created_at', { ascending: false });
       return data as Playlist[] || [];
@@ -39,7 +47,7 @@ export default function PlaylistsPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from('playlists')
-        .select('*, profiles(username)')
+        .select('*, profiles(username), playlist_videos(id, videos(id, thumbnail_url))')
         .eq('is_public', true)
         .order('created_at', { ascending: false })
         .limit(20);
@@ -65,17 +73,26 @@ export default function PlaylistsPage() {
 
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-        {playlists.map(playlist => (
-          <PlaylistGridCard
-            key={playlist.id}
-            id={playlist.id}
-            title={playlist.title}
-            videoCount={playlist.video_count || 0}
-            coverImages={playlist.thumbnail_urls || []}
-            isPrivate={!playlist.is_public}
-            ownerName={playlist.username || playlist.profiles?.username || 'usuário'}
-          />
-        ))}
+        {playlists.map(playlist => {
+          // Extrair thumbnails dos vídeos da playlist
+          const thumbnails = (playlist.playlist_videos || [])
+            .map(pv => pv.videos?.thumbnail_url)
+            .filter((url): url is string => !!url);
+          
+          const videoCount = playlist.playlist_videos?.length || 0;
+          
+          return (
+            <PlaylistGridCard
+              key={playlist.id}
+              id={playlist.id}
+              title={playlist.title}
+              videoCount={videoCount}
+              coverImages={thumbnails}
+              isPrivate={!playlist.is_public}
+              ownerName={playlist.username || playlist.profiles?.username || 'usuário'}
+            />
+          );
+        })}
       </div>
     );
   };
@@ -91,15 +108,19 @@ export default function PlaylistsPage() {
         </div>
         {session && (
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            <Button 
-              variant="outline" 
-              className="rounded-2xl h-12 px-6 font-bold gap-2 w-full sm:w-auto transition-none border-white/10 bg-black/20 hover:bg-black/40 text-white backdrop-blur-md"
-            >
-              <Youtube size={20} className="text-red-500 transition-none" /> Importar do YouTube
-            </Button>
-            <Button className="rounded-2xl h-12 px-6 neo-button font-black gap-2 w-full sm:w-auto transition-none bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-              <PlusCircle size={20} className="transition-none" /> Criar Playlist
-            </Button>
+            <ImportYouTubeModal>
+              <Button 
+                variant="outline" 
+                className="rounded-2xl h-12 px-6 font-bold gap-2 w-full sm:w-auto transition-none border-white/10 bg-black/20 hover:bg-black/40 text-white backdrop-blur-md"
+              >
+                <Youtube size={20} className="text-red-500 transition-none" /> Importar do YouTube
+              </Button>
+            </ImportYouTubeModal>
+            <CreatePlaylistModal>
+              <Button className="rounded-2xl h-12 px-6 neo-button font-black gap-2 w-full sm:w-auto transition-none bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                <PlusCircle size={20} className="transition-none" /> Criar Playlist
+              </Button>
+            </CreatePlaylistModal>
           </div>
         )}
       </div>

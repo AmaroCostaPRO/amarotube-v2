@@ -53,7 +53,7 @@ export function ChannelCard({ channel, onRefresh, onMove, isOrganizing }: Channe
       "glass-panel rounded-xl sm:rounded-[2rem] overflow-hidden p-4 group transition-all duration-300 relative border-none",
       isOrganizing ? "ring-2 ring-primary/20 shadow-neo-inset" : "hover:shadow-2xl hover:-translate-y-2"
     )}>
-      <Link href={`/channel/${channel.youtube_channel_id}`} className="block transition-transform hover:scale-105">
+      <Link href={`/channels/${channel.youtube_channel_id}`} className="block transition-transform hover:scale-105">
         <div className="relative aspect-video rounded-xl overflow-hidden mb-8 bg-black/10 transition-none">
           {channel.banner_url ? (
             <img

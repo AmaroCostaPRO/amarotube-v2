@@ -11,6 +11,7 @@ import { ChannelCard } from '@/components/features/channel/ChannelCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { AddChannelModal } from '@/components/modals';
 
 export default function ChannelsPage() {
   const { user, session } = useAuth();
@@ -125,9 +126,11 @@ export default function ChannelsPage() {
             )}
 
             {!isOrganizing && (
-              <Button className="rounded-xl h-12 px-6 neo-button font-black gap-2 flex-1 sm:flex-none transition-none shadow-primary/20 bg-primary text-primary-foreground">
-                <PlusCircle className="h-5 w-5 transition-none" /> Adicionar Canal
-              </Button>
+              <AddChannelModal>
+                <Button className="rounded-xl h-12 px-6 neo-button font-black gap-2 flex-1 sm:flex-none transition-none shadow-primary/20 bg-primary text-primary-foreground">
+                  <PlusCircle className="h-5 w-5 transition-none" /> Adicionar Canal
+                </Button>
+              </AddChannelModal>
             )}
 
             {isOrganizing && (
