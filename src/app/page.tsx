@@ -9,7 +9,8 @@ import { AddVideoSection } from '@/components/features/video/AddVideoSection';
 import { SocialSidebar } from '@/components/SocialSidebar';
 import { VideoCardSkeleton } from '@/components/ui/skeleton-grid';
 import { useFeed } from '@/hooks/useFeed';
-import { SORT_MODES } from '@/constants';
+import { useDebounce } from '@/hooks/useDebounce';
+import { SORT_MODES, DEBOUNCE_TIMES } from '@/constants';
 import { FeedVideo } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 
@@ -17,35 +18,26 @@ export default function Home() {
   const { user } = useAuth();
   const [filterMode, setFilterMode] = useState<string>(SORT_MODES.RECENT);
   const [searchInput, setSearchInput] = useState('');
+  const debouncedSearchTerm = useDebounce(searchInput, DEBOUNCE_TIMES.SEARCH);
+
+  // Mapeia o modo de filtro para o parâmetro de ordenação do feed
+  const getSortBy = () => {
+    if (filterMode === 'my-videos') return SORT_MODES.RECENT;
+    return filterMode;
+  };
+
+  const userIdFilter = filterMode === 'my-videos' ? user?.id : undefined;
 
   const {
-    data,
+    data: feedItems,
     error,
     isLoading,
     isFetchingNextPage,
     hasNextPage,
-    fetchNextPage,
-  } = useFeed();
-
-  // Create a flattened list of items from the pages
-  const feedItems = data?.pages.flat() || [];
-
-  // Ref for infinite scroll
-  const lastElementRef = (node: HTMLDivElement | null) => {
-    if (isLoading || isFetchingNextPage) return;
-    if (node) {
-      const observer = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting && hasNextPage) {
-          fetchNextPage();
-        }
-      });
-      observer.observe(node);
-    }
-  };
-
-  // Mock functions for compatibility since the simpler hook doesn't export them
-  const updateVideoItem = (_id: string, _updates: Partial<FeedVideo>) => {}; 
-  const removeVideoItem = (_id: string) => {}; 
+    lastElementRef,
+    updateVideoItem,
+    removeVideoItem,
+  } = useFeed(getSortBy(), debouncedSearchTerm, userIdFilter); 
 
   const handleDataUpdate = (videoId: string, updates: Partial<FeedVideo>) => {
     updateVideoItem(videoId, updates);
