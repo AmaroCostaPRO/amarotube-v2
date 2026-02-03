@@ -43,6 +43,7 @@ export function PlaylistQueue({ videos, playlistId, currentIndex, playlistTitle 
                   )}
                 >
                   <div className="relative aspect-video w-24 flex-shrink-0 overflow-hidden rounded-xl shadow-md border border-white/10 transition-none">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={video.thumbnail_url || '/placeholder.svg'} alt={video.title} className="w-full h-full object-cover transition-none" />
                     {isCurrent && (
                       <div className="absolute inset-0 bg-primary/40 backdrop-blur-[2px] flex items-center justify-center transition-none">

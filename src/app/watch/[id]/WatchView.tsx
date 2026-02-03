@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { WatchPlayer } from "@/components/features/video/WatchPlayer";
 import { RelatedVideos } from "@/components/features/video/RelatedVideos";
 import { WatchInfo } from "@/components/features/video/WatchInfo";
 import { CommentsSection } from "@/components/features/social/CommentsSection";
 import { WatchPartyManager } from "@/components/features/social/WatchPartyManager";
+import { PlaylistQueue } from "@/components/features/playlist/PlaylistQueue";
 import { usePlayer } from "@/context/PlayerContext";
 import { useAuth } from "@/context/AuthContext";
 import { Video } from "@/types";
@@ -14,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, ThumbsUp, Lock, Minimize2, Maximize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { videoService, VideoMetrics } from "@/services";
+import { videoService, playlistService, VideoMetrics } from "@/services";
 import { apiService, VideoContext } from "@/services/api";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,12 +29,20 @@ interface WatchViewProps {
 export function WatchView({ video }: WatchViewProps) {
   const { playVideo, currentVideo, isFloating, toggleFloating, currentTime, setCurrentTime, isPlaying, isTheaterMode, toggleTheaterMode } = usePlayer();
   const { session } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Parâmetros de playlist
+  const playlistId = searchParams.get('playlist');
+  const currentIndex = parseInt(searchParams.get('index') || '0', 10);
 
   const [metrics, setMetrics] = useState<VideoMetrics | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [videoContext, setVideoContext] = useState<VideoContext | null>(null);
+  const [playlistVideos, setPlaylistVideos] = useState<Video[]>([]);
+  const [playlistTitle, setPlaylistTitle] = useState('');
   const playerRef = useRef<YouTubePlayer | null>(null);
 
   // Sincronizar Player quando o vídeo mudar
@@ -65,6 +75,30 @@ export function WatchView({ video }: WatchViewProps) {
   useEffect(() => {
     return () => toggleTheaterMode(false);
   }, [toggleTheaterMode]);
+
+  // Carregar playlist se estiver em modo playlist
+  useEffect(() => {
+    const loadPlaylist = async () => {
+      if (!playlistId) {
+        setPlaylistVideos([]);
+        setPlaylistTitle('');
+        return;
+      }
+      try {
+        const playlistDetails = await playlistService.getById(playlistId);
+        if (playlistDetails) setPlaylistTitle(playlistDetails.title);
+        
+        const playlistItems = await playlistService.getPlaylistVideos(playlistId);
+        if (playlistItems && playlistItems.length > 0) {
+          const videos = playlistItems.map(item => item.video).filter(Boolean) as Video[];
+          setPlaylistVideos(videos);
+        }
+      } catch (error) {
+        console.error('[WatchView] Erro ao carregar playlist:', error);
+      }
+    };
+    loadPlaylist();
+  }, [playlistId]);
 
   const handleSummarizeVideo = async () => {
     if (!video || !session) return;
@@ -104,9 +138,25 @@ export function WatchView({ video }: WatchViewProps) {
     toggleFloating();
   }, [setCurrentTime, toggleFloating]);
 
-  const handleVideoEnd = () => {
-    console.log("Video finished");
-  };
+  const handleVideoEnd = useCallback(() => {
+    // Se estiver em modo playlist, ir para o próximo vídeo
+    if (playlistId && playlistVideos.length > 0) {
+      const nextIndex = (currentIndex + 1) % playlistVideos.length;
+      const nextVideo = playlistVideos[nextIndex];
+      if (nextVideo) {
+        router.push(`/watch/${nextVideo.id}?playlist=${playlistId}&index=${nextIndex}`);
+      }
+    }
+  }, [playlistId, playlistVideos, currentIndex, router]);
+
+  const handleNextVideo = useCallback(() => {
+    if (!playlistId || playlistVideos.length === 0) return;
+    const nextIndex = (currentIndex + 1) % playlistVideos.length;
+    const nextVideo = playlistVideos[nextIndex];
+    if (nextVideo) {
+      router.push(`/watch/${nextVideo.id}?playlist=${playlistId}&index=${nextIndex}`);
+    }
+  }, [playlistId, playlistVideos, currentIndex, router]);
 
   return (
     <div className="relative min-h-screen">
@@ -191,6 +241,7 @@ export function WatchView({ video }: WatchViewProps) {
                   onSummarize={handleSummarizeVideo}
                   onCloseSummary={() => setShowSummary(false)}
                   onToggleFloating={session ? handleToggleFloating : undefined}
+                  onNextVideo={playlistId ? handleNextVideo : undefined}
                 />
                 <CommentsSection videoId={video.id} />
               </div>
@@ -226,22 +277,31 @@ export function WatchView({ video }: WatchViewProps) {
                   />
                 )}
 
-                {/* Recomendações */}
-                <Card className="glass-panel border-none rounded-xl sm:rounded-[2rem] overflow-hidden shadow-2xl">
-                  <CardHeader className="p-4 sm:p-6 pb-2 border-b border-white/5 bg-white/5">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-widest text-foreground">Recomendações</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6">
-                    {session ? (
-                      <RelatedVideos currentVideoId={video.id} />
-                    ) : (
-                      <div className="py-12 text-center glass-panel rounded-xl border-dashed border-2 bg-transparent border-white/10 flex flex-col items-center justify-center gap-3">
-                        <Lock size={32} className="opacity-20" />
-                        <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed opacity-40">Acesso exclusivo para membros</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                {/* Playlist Queue ou Recomendações */}
+                {playlistId && playlistVideos.length > 0 ? (
+                  <PlaylistQueue
+                    videos={playlistVideos}
+                    playlistId={playlistId}
+                    currentIndex={currentIndex}
+                    playlistTitle={playlistTitle}
+                  />
+                ) : (
+                  <Card className="glass-panel border-none rounded-xl sm:rounded-4xl overflow-hidden shadow-2xl">
+                    <CardHeader className="p-4 sm:p-6 pb-2 border-b border-white/5 bg-white/5">
+                      <CardTitle className="text-[10px] font-black uppercase tracking-widest text-foreground">Recomendações</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 sm:p-6">
+                      {session ? (
+                        <RelatedVideos currentVideoId={video.id} />
+                      ) : (
+                        <div className="py-12 text-center glass-panel rounded-xl border-dashed border-2 bg-transparent border-white/10 flex flex-col items-center justify-center gap-3">
+                          <Lock size={32} className="opacity-20" />
+                          <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed opacity-40">Acesso exclusivo para membros</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </motion.div>
           )}
