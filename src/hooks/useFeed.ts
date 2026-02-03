@@ -8,47 +8,74 @@ const PLACEHOLDER_AVATAR = 'https://github.com/shadcn.png';
 
 const ITEMS_PER_PAGE = 10;
 
+// Interface para tipar o retorno flexível do RPC
+type RPCResponse = {
+  id: string;
+  title?: string;
+  thumbnail_url?: string;
+  cover?: string;
+  created_at?: string;
+  duration?: string;
+  view_count?: number;
+  views?: number;
+  like_count?: number;
+  channel_name?: string;
+  channel_avatar_url?: string;
+  playlist_id?: string;
+  // Permite outros campos que venham do banco
+  [key: string]: any;
+};
+
 export function useFeed() {
   return useInfiniteQuery({
     queryKey: ['feed-videos'],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam = 0 }) => {
-      const from = pageParam * ITEMS_PER_PAGE;
-      const to = from + ITEMS_PER_PAGE - 1;
-
-      console.log('Fetching feed', { from, to });
-
-      const { data, error } = await supabase
-        .from('videos')
-        .select('*')
-        .range(from, to)
-        .order('created_at', { ascending: false });
+    initialPageParam: 1,
+    queryFn: async ({ pageParam = 1 }) => { // Alterado default para 1 (RPC usually 1-based)
+      // RPC Call para buscar métricas corretas (views, likes)
+      const { data, error } = await supabase.rpc('get_hybrid_feed', {
+        page_number: pageParam,
+        page_size: ITEMS_PER_PAGE,
+        sort_mode: 'recent',
+        search_term_param: null,
+        p_user_id_filter: null,
+      });
 
       if (error) {
-        console.error('🔥 Erro Supabase:', error);
+        console.error('🔥 Erro Supabase RPC:', error);
         throw new Error(error?.message || 'Erro desconhecido ao buscar feed');
       }
 
-      console.log('📦 DADOS DO SUPABASE:', data?.[0]);
-
-      const videosWithMockChannel = ((data || []) as any[]).map((video) => ({
+      // O RPC já retorna o objeto no formato esperado (FeedItem), mas precisamos garantir a tipagem
+      // e adicionar fallbacks visuais caso o RPC retorne campos nulos
+      const videosWithMockChannel = ((data || []) as unknown as RPCResponse[]).map((video) => ({
+        ...video,
         id: video.id,
         title: video.title || 'Sem título',
         thumbnail_url: video.thumbnail_url || video.cover || PLACEHOLDER_IMG,
-        views: video.views || video.view_count || 0,
         created_at: video.created_at || new Date().toISOString(),
         duration: video.duration || '0:00',
+        view_count: video.view_count ?? video.views ?? 0,
+        like_count: video.like_count ?? 0,
+        app_like_count: video.app_like_count ?? 0,
+        view_count_delta: video.view_count_delta ?? 0,
+        like_count_delta: video.like_count_delta ?? 0,
+        is_liked_by_user: video.is_liked_by_user ?? false,
+        avatar_url: video.channel_avatar_url || PLACEHOLDER_AVATAR, // RPC geralmente retorna channel_avatar_url
         channel: { 
-          name: 'Canal Desconhecido', 
-          avatar_url: PLACEHOLDER_AVATAR,
-          ...video.channel // Tenta preservar se vier algo parcial
+          name: video.channel_name || 'Canal Desconhecido', 
+          avatar_url: video.channel_avatar_url || PLACEHOLDER_AVATAR,
         },
-        // Preserve other fields
-        ...video,
-        item_type: 'video' // Ensure item_type is set
-      }));
+        item_type: 'video' as const
+      }))
+      // FIX: Feed Pollution - Filter out items that belong to a playlist (keep only root/manual videos)
+      .filter(item => {
+        if (item.item_type !== 'video') return true;
+        // Verifica se o vídeo está associado a uma playlist (playlist_id não-nulo)
+        const video = item as unknown as RPCResponse;
+        return !video.playlist_id; 
+      });
 
-      return videosWithMockChannel as FeedItem[];
+      return videosWithMockChannel as unknown as FeedItem[];
     },
     getNextPageParam: (lastPage, allPages) => {
       if (!lastPage || lastPage.length < ITEMS_PER_PAGE) return undefined;

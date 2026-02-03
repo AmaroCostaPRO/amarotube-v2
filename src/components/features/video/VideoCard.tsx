@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Eye, BarChart, CheckCircle2, ThumbsUp, TrendingUp, Trash2, ShieldAlert, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { formatNumber } from '@/lib/utils';
+import { formatCompactNumber } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useVideoWatchedStatus } from '@/hooks/useVideoHistory';
@@ -130,8 +130,8 @@ export function VideoCard({ video, onDataUpdate, onVideoDeleted }: VideoCardProp
 
         <div className="mt-auto flex items-center justify-between text-[11px] font-black uppercase tracking-widest transition-none">
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-blue-500" /> {formatNumber(video.view_count)}</span>
-            <span className="flex items-center gap-1.5"><ThumbsUp className="w-3.5 h-3.5 text-red-500" /> {formatNumber(video.like_count)}</span>
+            <span className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-blue-500" /> {formatCompactNumber(video.view_count)}</span>
+            <span className="flex items-center gap-1.5"><ThumbsUp className="w-3.5 h-3.5 text-red-500" /> {formatCompactNumber(video.like_count)}</span>
           </div>
           <div className="flex gap-1 items-center">
             {video.is_nsfw && <Badge variant="destructive" className="h-5 text-[8px] rounded-lg">NSFW</Badge>}

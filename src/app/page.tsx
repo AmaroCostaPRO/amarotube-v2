@@ -58,42 +58,42 @@ export default function Home() {
   const selectorClasses = "bg-black/5 dark:bg-black/20 border-none shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20";
 
   return (
-    <div className="smart-container--wide mx-auto max-w-[1800px]">
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-8">
+    <div className="smart-container--wide">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-8 transition-none">
         <div className="min-w-0"> {/* Main Feed Column */}
-          <div className="relative z-20 mb-8">
-            <div className="flex justify-center">
-              <div className="w-full lg:max-w-xl" data-add-video>
+          <div className="relative z-20 mb-8 transition-none">
+            <div className="flex justify-center transition-none">
+              <div className="w-full lg:max-w-xl transition-none" data-add-video>
                 <AddVideoSection />
               </div>
             </div>
           </div>
 
-          <div className="relative z-10">
-            <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-between items-center mb-6">
+          <div className="relative z-10 transition-none">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-between items-center mb-6 transition-none">
               {/* Bloco de Título e Filtro */}
-              <div className="flex items-center justify-between gap-4 p-4 glass-panel rounded-xl sm:rounded-[1.5rem] w-full sm:w-auto min-w-[320px] shadow-xl">
-                <h2 className="text-xl font-black whitespace-nowrap tracking-tight pl-2">Feed Principal</h2>
+              <div className="flex items-center justify-between gap-4 p-4 glass-panel rounded-xl sm:rounded-[1.5rem] w-full sm:w-auto min-w-[320px] shadow-xl transition-none">
+                <h2 className="text-xl font-black whitespace-nowrap tracking-tight pl-2 transition-none">Feed Principal</h2>
                 <Select value={filterMode} onValueChange={(value: string) => setFilterMode(value)}>
                   <SelectTrigger
-                    className={`w-[140px] ${selectorClasses} text-sm h-10 rounded-xl`}
+                    className={`w-[140px] ${selectorClasses} text-sm h-10 rounded-xl transition-none`}
                     aria-label="Filtrar vídeos por"
                   >
                     <SelectValue placeholder="Ordem" />
                   </SelectTrigger>
-                  <SelectContent className="glass-panel rounded-2xl border-white/20">
-                    <SelectItem value={SORT_MODES.RECENT} className="text-xs">Recentes</SelectItem>
-                    <SelectItem value={SORT_MODES.POPULAR} className="text-xs">Tendências</SelectItem>
-                    <SelectItem value={SORT_MODES.TOP} className="text-xs">Karma</SelectItem>
-                    {user && <SelectItem value="my-videos" className="text-xs">Meus</SelectItem>}
+                  <SelectContent className="glass-panel rounded-2xl border-white/20 transition-none">
+                    <SelectItem value={SORT_MODES.RECENT} className="text-xs transition-none">Recentes</SelectItem>
+                    <SelectItem value={SORT_MODES.POPULAR} className="text-xs transition-none">Tendências</SelectItem>
+                    <SelectItem value={SORT_MODES.TOP} className="text-xs transition-none">Karma</SelectItem>
+                    {user && <SelectItem value="my-videos" className="text-xs transition-none">Meus</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Busca do Feed */}
-              <div className="p-4 glass-panel rounded-xl sm:rounded-[1.5rem] w-full sm:w-auto min-w-[320px] shadow-xl">
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 flex items-center h-10 bg-black/5 dark:bg-black/20 rounded-xl shadow-inner px-3 border border-white/5">
+              <div className="p-4 glass-panel rounded-xl sm:rounded-[1.5rem] w-full sm:w-auto min-w-[320px] shadow-xl transition-none">
+                <div className="flex items-center gap-3 transition-none">
+                  <div className="flex-1 flex items-center h-10 bg-black/5 dark:bg-black/20 rounded-xl shadow-inner px-3 border border-white/5 transition-none">
                     <input
                       id="feed-search-input"
                       name="feed-search"
@@ -101,33 +101,33 @@ export default function Home() {
                       placeholder="Buscar vídeos..."
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
-                      className="flex-1 bg-transparent border-none outline-none text-sm font-normal text-foreground placeholder:text-muted-foreground h-full"
+                      className="flex-1 bg-transparent border-none outline-none text-sm font-normal text-foreground placeholder:text-muted-foreground h-full overflow-hidden text-ellipsis whitespace-nowrap transition-none"
                       aria-label="Pesquisar no feed"
                     />
                   </div>
-                  <Search className="h-5 w-5 text-muted-foreground opacity-30 flex-shrink-0 mr-1" />
+                  <Search className="h-5 w-5 text-muted-foreground opacity-30 flex-shrink-0 mr-1 transition-none" />
                 </div>
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-2 transition-none">
               {isLoading ? (
                 <VideoCardSkeleton />
               ) : error ? (
-                <div className="text-center py-10">
-                  <p className="text-destructive mb-2">Erro ao carregar o feed</p>
-                  <p className="text-muted-foreground text-sm">{error.message}</p>
+                <div className="text-center py-10 transition-none">
+                  <p className="text-destructive mb-2 transition-none">Erro ao carregar o feed</p>
+                  <p className="text-muted-foreground text-sm transition-none">{error.message}</p>
                 </div>
               ) : (
-                <div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+                <div className="transition-none">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-x-4 gap-y-4 sm:gap-y-6 sm:gap-x-6 lg:gap-x-8 transition-none">
                     {feedItems?.map((item, index) => {
                       const isLastElement = feedItems.length === index + 1;
                       const ref = isLastElement ? lastElementRef : null;
 
                       if (item.item_type === 'video') {
                         return (
-                          <div ref={ref} key={`video-${item.id}-${index}`}>
+                          <div ref={ref} key={`video-${item.id}-${index}`} className="transition-none">
                             <VideoCard
                               video={item}
                               onDataUpdate={(updates) => handleDataUpdate(item.id, updates)}
@@ -138,7 +138,7 @@ export default function Home() {
                       }
 
                       return (
-                        <div ref={ref} key={`activity-${item.id}-${index}`}>
+                        <div ref={ref} key={`activity-${item.id}-${index}`} className="transition-none">
                           <ActivityCard activity={item} />
                         </div>
                       );
