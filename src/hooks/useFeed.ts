@@ -6,7 +6,7 @@ const PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1611162617474-5b21e87
 const PLACEHOLDER_AVATAR = 'https://github.com/shadcn.png';
 
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 12; // Adjusted for grid (2,3,4 cols)
 
 // Interface para tipar o retorno flexível do RPC
 type RPCResponse = {
@@ -22,6 +22,7 @@ type RPCResponse = {
   channel_name?: string;
   channel_avatar_url?: string;
   playlist_id?: string;
+  origin?: string; // v1.1 compatibility
   // Permite outros campos que venham do banco
   [key: string]: any;
 };
@@ -65,21 +66,42 @@ export function useFeed() {
           name: video.channel_name || 'Canal Desconhecido', 
           avatar_url: video.channel_avatar_url || PLACEHOLDER_AVATAR,
         },
-        item_type: 'video' as const
+        item_type: 'video' as const,
+        origin: video.origin // Preserve origin for filtering
       }))
       // FIX: Feed Pollution - Filter out items that belong to a playlist (keep only root/manual videos)
       .filter(item => {
         if (item.item_type !== 'video') return true;
         // Verifica se o vídeo está associado a uma playlist (playlist_id não-nulo)
         const video = item as unknown as RPCResponse;
-        return !video.playlist_id; 
+        
+        // v1.1 Logic check: origin === 'playlist'
+        if (video.origin === 'playlist') return false;
+        
+        return true; 
       });
 
       return videosWithMockChannel as unknown as FeedItem[];
     },
     getNextPageParam: (lastPage, allPages) => {
       if (!lastPage || lastPage.length < ITEMS_PER_PAGE) return undefined;
-      return allPages.length;
+      return allPages.length + 1;
+    },
+    // Client-side deduplication to ensure unique videos across pages
+    select: (data) => {
+      const seenIds = new Set<string>();
+      return {
+        ...data,
+        pages: data.pages.map((page) => 
+          page.filter((item) => {
+            if (seenIds.has(item.id)) {
+              return false;
+            }
+            seenIds.add(item.id);
+            return true;
+          })
+        ),
+      };
     },
   });
 }

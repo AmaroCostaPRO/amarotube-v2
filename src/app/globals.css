@@ -286,3 +286,16 @@ html {
     padding-inline: clamp(2rem, 5vw, 8rem);
   }
 }
+
+@layer utilities {
+  /* Força bruta para o Botão Azul AmaroTube */
+  .bg-primary, .button-primary, button[data-variant="default"], button[class*="bg-primary"] {
+    background-color: #2563EB !important; /* Azul Royal Vibrante (hsl 221 83% 53%) */
+    color: #FFFFFF !important;
+  }
+
+  /* Garante que o hover também seja azul (um pouco mais escuro) */
+  .bg-primary:hover, button[data-variant="default"]:hover, button[class*="bg-primary"]:hover {
+    background-color: #1D4ED8 !important;
+  }
+}
