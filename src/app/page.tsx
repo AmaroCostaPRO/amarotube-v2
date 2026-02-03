@@ -72,7 +72,7 @@ export default function Home() {
           <div className="relative z-10 transition-none">
             <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-between items-center mb-6 transition-none">
               {/* Bloco de Título e Filtro */}
-              <div className="flex items-center justify-between gap-4 p-4 glass-panel rounded-xl sm:rounded-[1.5rem] w-full sm:w-auto min-w-[320px] shadow-xl transition-none">
+              <div className="flex items-center justify-between gap-4 p-4 glass-panel rounded-xl sm:rounded-3xl w-full sm:w-auto min-w-[320px] shadow-xl transition-none">
                 <h2 className="text-xl font-black whitespace-nowrap tracking-tight pl-2 transition-none">Feed Principal</h2>
                 <Select value={filterMode} onValueChange={(value: string) => setFilterMode(value)}>
                   <SelectTrigger
@@ -91,7 +91,7 @@ export default function Home() {
               </div>
 
               {/* Busca do Feed */}
-              <div className="p-4 glass-panel rounded-xl sm:rounded-[1.5rem] w-full sm:w-auto min-w-[320px] shadow-xl transition-none">
+              <div className="p-4 glass-panel rounded-xl sm:rounded-3xl w-full sm:w-auto min-w-[320px] shadow-xl transition-none">
                 <div className="flex items-center gap-3 transition-none">
                   <div className="flex-1 flex items-center h-10 bg-black/5 dark:bg-black/20 rounded-xl shadow-inner px-3 border border-white/5 transition-none">
                     <input
@@ -105,7 +105,7 @@ export default function Home() {
                       aria-label="Pesquisar no feed"
                     />
                   </div>
-                  <Search className="h-5 w-5 text-muted-foreground opacity-30 flex-shrink-0 mr-1 transition-none" />
+                  <Search className="h-5 w-5 text-muted-foreground opacity-30 shrink-0 mr-1 transition-none" />
                 </div>
               </div>
             </div>

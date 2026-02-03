@@ -42,7 +42,7 @@ export function VideoCard({ video, onDataUpdate, onVideoDeleted }: VideoCardProp
     <motion.div
       whileHover={{ y: -8 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="group relative flex flex-col glass-panel rounded-xl sm:rounded-[2rem] overflow-hidden h-full shadow-lg border-none"
+      className="group relative flex flex-col glass-panel rounded-xl sm:rounded-4xl overflow-hidden h-full shadow-lg border-none"
     >
       <div className="relative aspect-video overflow-hidden">
         <Link href={`/watch/${video.id}`} className="block w-full h-full">
@@ -54,7 +54,7 @@ export function VideoCard({ video, onDataUpdate, onVideoDeleted }: VideoCardProp
               isSensitive && !showSensitive && "blur-2xl scale-125 grayscale"
             )}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-none" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-none" />
         </Link>
 
         {isSensitive && !showSensitive && (
