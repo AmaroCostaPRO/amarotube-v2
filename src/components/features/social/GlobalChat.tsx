@@ -71,7 +71,7 @@ export function GlobalChat() {
     <div className="glass-panel rounded-[2rem] flex flex-col h-[480px] overflow-hidden shadow-2xl border-none transition-none">
       <CardHeader className="pb-2 border-b border-white/5 bg-white/5 transition-none">
         <CardTitle className="text-lg flex items-center gap-2 transition-none">
-          <MessageSquare className="h-5 w-5 text-primary" /> Chat Global
+          <MessageSquare className="h-5 w-5 text-blue-600 dark:text-blue-500" /> Chat Global
         </CardTitle>
       </CardHeader>
       

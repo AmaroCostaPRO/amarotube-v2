@@ -93,7 +93,7 @@ export default function Home() {
                       placeholder="Buscar vídeos..."
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
-                      className="flex-1 bg-transparent border-none outline-none text-sm font-normal text-foreground placeholder:text-muted-foreground h-full overflow-hidden text-ellipsis whitespace-nowrap transition-none"
+                      className="flex-1 bg-transparent border-none outline-none text-sm font-normal text-black dark:text-white placeholder:text-black dark:placeholder:text-white placeholder:font-normal h-full"
                       aria-label="Pesquisar no feed"
                     />
                   </div>
